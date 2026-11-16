@@ -240,7 +240,8 @@
     revives: 0,        // 本局还剩几枚复活币（重开清零）
     reviveGiven: 0,    // 本局已经发放过几次（用来判断跨过新的 2000 分）
     freeze: 0,         // 命中定格剩余秒数
-    bombs: 3, bombMode: false, blastGrace: 0
+    bombs: 3, bombMode: false, blastGrace: 0,
+    sweep: null  // 两辆坦克合成后的大坦克清场动画
   };
 
   /* ---------------------------------------------------------
@@ -503,7 +504,7 @@
     }
     for (const b of balls) {
       const speed = Math.hypot(b.vx, b.vy);
-      const limit = b.blastTimer > 0 ? 5250 : 1500;
+      const limit = b.blastTimer > 0 ? 15750 : 1500;
       if (speed > limit) { b.vx *= limit / speed; b.vy *= limit / speed; }
     }
 
@@ -535,7 +536,7 @@
       other.vx += nx * strength;
       other.vy += ny * strength;
       const speed = Math.hypot(other.vx, other.vy);
-      const limit = other.blastTimer > 0 ? 5250 : 1200;
+      const limit = other.blastTimer > 0 ? 15750 : 1200;
       if (speed > limit) { other.vx *= limit / speed; other.vy *= limit / speed; }
       other.stress *= 0.2;
     }
@@ -551,9 +552,7 @@
       releaseStress(mx, my, a, b);
 
       if (tier >= MAX_TIER) {
-        /* 两只神奶蛙 → 一起炸掉，拿一大笔奖励分（外加一枚复活币）。
-           注意：它同时清掉了两块最大的水果，是后期唯一的泄压阀，不能取消。
-           分数的飘字不用 addScore 那个普通的，下面单独给了「大字 +500」。 */
+        /* 两辆坦克触发大坦克横扫全场，沿用分数与复活币奖励。 */
         addScore(MAX_BONUS);
         burst(mx, my, MAX_TIER, 90, 560);
         burst(mx, my, MAX_TIER - 2, 42, 340);
@@ -567,6 +566,10 @@
           state.revives++;
           paintRevives(true);
         }
+        state.bombMode = false;
+        state.sweep = { elapsed: 0, duration: 2.4, x: -190 };
+        paintBomb();
+        break; // 本次清场不再处理同一子步中其他已排队合成
       } else {
         const nt = tier + 1;
         const nb = makeBall(mx, my, nt, (a.vx + b.vx) * 0.5, (a.vy + b.vy) * 0.5 - 10);
@@ -693,7 +696,7 @@
   }
 
   function tryDrop() {
-    if (state.over || !state.ready) return;
+    if (state.over || state.sweep || !state.ready) return;
     if (state.bombMode) {
       if (state.bombs <= 0 || hasActiveBomb()) return;
       const x = clamp(state.aimX, WALL + 9.5, W - WALL - 9.5);
@@ -727,13 +730,13 @@
   function paintBomb() {
     if (bombCount) bombCount.textContent = '×' + state.bombs;
     if (!bombBtn) return;
-    bombBtn.disabled = state.bombs <= 0 || hasActiveBomb() || state.over;
+    bombBtn.disabled = state.bombs <= 0 || hasActiveBomb() || state.over || !!state.sweep;
     bombBtn.setAttribute('aria-pressed', state.bombMode ? 'true' : 'false');
     bombBtn.title = state.bombMode ? '已选择炸药：点击棋盘投放，再按一次取消' : '选择炸药，点击棋盘投放（B）';
   }
 
   function toggleBomb() {
-    if (state.over || state.bombs <= 0 || hasActiveBomb()) return;
+    if (state.over || state.sweep || state.bombs <= 0 || hasActiveBomb()) return;
     state.bombMode = !state.bombMode;
     moveAim(state.aimX);
     paintBomb();
@@ -749,10 +752,10 @@
       let nx = distance > 0.001 ? dx / distance : 0;
       let ny = distance > 0.001 ? dy / distance - 0.32 : -1;
       const norm = Math.hypot(nx, ny) || 1; nx /= norm; ny /= norm;
-      const kick = 5 * (300 + 400 / (1 + distance / 150));
+      const kick = 15 * (300 + 400 / (1 + distance / 150));
       other.vx += nx * kick; other.vy += ny * kick;
       const speed = Math.hypot(other.vx, other.vy);
-      if (speed > 5250) { other.vx *= 5250 / speed; other.vy *= 5250 / speed; }
+      if (speed > 15750) { other.vx *= 15750 / speed; other.vy *= 15750 / speed; }
       other.blastTimer = 2;
       other.overTime = 0;
       other.stress *= 0.35;
@@ -879,7 +882,7 @@
     state.revives = 0;        // 复活币只在本局有效，重开清零
     state.reviveGiven = 0;
     state.freeze = 0;
-    state.bombs = 3; state.bombMode = false; state.blastGrace = 0;
+    state.bombs = 3; state.bombMode = false; state.blastGrace = 0; state.sweep = null;
     state.pending = pickSpawnTier();
     state.next = pickSpawnTier(state.pending);
     if (overlayEl) overlayEl.classList.remove('show');
@@ -1071,6 +1074,58 @@
     c.restore();
   }
 
+  /* 一辆更大的坦克从左向右经过；扫到的人物向右上飞出。 */
+  function updateSweep(dt) {
+    const sw = state.sweep;
+    if (!sw) return;
+    sw.elapsed = Math.min(sw.duration, sw.elapsed + dt);
+    sw.x = -190 + (W + 380) * (sw.elapsed / sw.duration);
+    const front = sw.x + 165;
+    for (let i = 0; i < state.balls.length; i++) {
+      const b = state.balls[i];
+      if (b.dead) continue;
+      if (!b.sweepHit && b.x - b.rb <= front) {
+        b.sweepHit = true;
+        b.sweepLife = 0;
+        b.sweepVx = 500 + (i % 4) * 75;
+        b.sweepVy = -(320 + (i % 5) * 55);
+      }
+      if (b.sweepHit) {
+        b.sweepLife += dt;
+        b.x += b.sweepVx * dt;
+        b.y += b.sweepVy * dt;
+        b.sweepVy += 780 * dt;
+        b.angle += (i % 2 ? 1 : -1) * dt * 2.2;
+      }
+    }
+    if (sw.elapsed >= sw.duration) {
+      state.balls.length = 0;
+      state.sweep = null;
+      state.danger = false;
+      state.ready = true;
+      state.cooldown = 0;
+      state.blastGrace = 0;
+      paintBomb();
+    }
+  }
+
+  function drawSweep() {
+    const sw = state.sweep;
+    if (!sw) return;
+    const front = sw.x + 165;
+    ctx.save();
+    ctx.fillStyle = 'rgba(244, 180, 94, .12)';
+    ctx.fillRect(front - 20, 8, 40, H - 20);
+    ctx.globalAlpha = 0.2;
+    ctx.fillStyle = '#a77c54';
+    ctx.beginPath();
+    ctx.ellipse(sw.x - 80, H - WALL - 6, 95, 14, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+    const bob = Math.sin(sw.elapsed * 26) * 1.5;
+    drawFruit(ctx, sw.x, H - 75 + bob, 165, MAX_TIER, 0, 1);
+  }
+
   function drawBalls() {
     const now = performance.now();
     const balls = state.balls;
@@ -1079,6 +1134,15 @@
     for (let i = 0; i < sorted.length; i++) {
       const b = sorted[i];
       if (b.dead) continue;
+
+      if (state.sweep && b.sweepHit) {
+        ctx.save();
+        ctx.globalAlpha = clamp(1 - Math.max(0, b.sweepLife - 0.5) / 0.35, 0, 1);
+        if (b.isBomb) drawBomb(ctx, b.x, b.y, b.r, b.fuse);
+        else drawFruit(ctx, b.x, b.y, b.r, b.tier, b.angle, 1);
+        ctx.restore();
+        continue;
+      }
 
       /* 地面投影 */
       ctx.save();
@@ -1102,7 +1166,7 @@
   }
 
   function drawAim() {
-    if (state.over) return;
+    if (state.over || state.sweep) return;
     const tier = state.pending;
     const r = state.bombMode ? 9 : FRUITS[tier].r;
     const [lo, hi] = state.bombMode ? [WALL + 9.5, W - WALL - 9.5] : aimLimit(tier);
@@ -1272,6 +1336,11 @@
 
     if (levelDialog && levelDialog.open) return; // 图鉴打开时暂停
     if (state.over) return;          // 结束后冻结棋盘（粒子特效仍在 render 里继续）
+    if (state.sweep) {
+      updateSweep(dt);
+      if (state.flash > 0) state.flash = Math.max(0, state.flash - dt * 2.2);
+      return;
+    }
 
     if (!state.ready) {
       state.cooldown -= dt;
@@ -1281,9 +1350,10 @@
     /* 爆炸后高速运动时增加子步，控制单步位移，减少穿透。 */
     let maxSpeed = 0;
     for (const b of state.balls) maxSpeed = Math.max(maxSpeed, Math.hypot(b.vx, b.vy));
-    const substeps = Math.min(16, Math.max(SUBSTEPS, Math.ceil(maxSpeed * dt / 8)));
+    const substeps = Math.min(36, Math.max(SUBSTEPS, Math.ceil(maxSpeed * dt / 8)));
     const sub = dt / substeps;
-    for (let s = 0; s < substeps; s++) stepPhysics(sub);
+    for (let s = 0; s < substeps; s++) { stepPhysics(sub); if (state.sweep) break; }
+    if (state.sweep) return;
     const bomb = state.balls.find(b => b.isBomb && !b.dead);
     if (bomb) { bomb.fuse -= dt; if (bomb.fuse <= 0) detonateBomb(bomb); }
     else if (state.blastGrace > 0) state.blastGrace = Math.max(0, state.blastGrace - dt);
@@ -1298,6 +1368,7 @@
 
     drawBoard();
     drawBalls();
+    drawSweep();
     drawAim();
     /* 定格期间把特效的 dt 也压成 0，让它跟世界一起停住 */
     drawEffects(state.freeze > 0 ? 0 : dt);

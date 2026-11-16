@@ -145,19 +145,19 @@ U.reset();
 let a=ball(70,0,600),b=ball(130,0,600), far=ball(350,4,500);
 bomb=ball(35,0,600);bomb.isBomb=true;bomb.tier=-1;S.balls.push(a,b,far,bomb);U.detonateBomb(bomb);
 check('爆炸不删除人物，全场受到推力', S.balls.length===3 && Math.hypot(a.vx,a.vy)>100 && Math.hypot(far.vx,far.vy)>100);
-const expected=5*(300+400/(1+35/150));
-check('爆炸初始推力为原来的五倍', Math.abs(Math.hypot(a.vx,a.vy)-expected)<0.01, 'actual='+Math.hypot(a.vx,a.vy).toFixed(1)+' expected='+expected.toFixed(1));
+const expected=15*(300+400/(1+35/150));
+check('爆炸初始推力为之前版本的三倍', Math.abs(Math.hypot(a.vx,a.vy)-expected)<0.01, 'actual='+Math.hypot(a.vx,a.vy).toFixed(1)+' expected='+expected.toFixed(1));
 check('爆炸后提供判负缓冲', S.blastGrace>0);
 let invalid=false, maxSpeed=0;
 for(let i=0;i<60*4;i++){ U.update(1/60); for(const item of S.balls){ if(outOfBounds(item,12)) invalid=true; maxSpeed=Math.max(maxSpeed,Math.hypot(item.vx,item.vy)); } }
-check('爆炸后数值稳定且不穿墙',!invalid && maxSpeed<=5250,'max speed='+maxSpeed.toFixed(1));
+check('爆炸后数值稳定且不穿墙',!invalid && maxSpeed<=15750,'max speed='+maxSpeed.toFixed(1));
 check('被弹开的同级人物仍能碰撞合成',S.score>0,'score='+S.score);
 U.reset();
 for(let i=0;i<20;i++) S.balls.push(ball(70+(i%5)*65,i%5,385+Math.floor(i/5)*65));
 bomb=ball(210,0,525); bomb.isBomb=true; bomb.tier=-1; S.balls.push(bomb); U.detonateBomb(bomb);
 let stressInvalid=false, largest=0;
 for(let i=0;i<120;i++){ U.update(1/60); for(const item of S.balls){ if(outOfBounds(item,12)) stressInvalid=true; largest=Math.max(largest,Math.hypot(item.vx,item.vy)); } }
-check('拥挤场景强爆炸后保持有界',!stressInvalid && largest<=5250,'max speed='+largest.toFixed(1));
+check('拥挤场景强爆炸后保持有界',!stressInvalid && largest<=15750,'max speed='+largest.toFixed(1));
 S.bombs=0;U.toggleBomb();check('没有炸药时无法选择',!S.bombMode);
 U.reset();check('重开后炸药恢复至 3 枚',S.bombs===3);
 console.log(pass?'炸药玩法通过':'炸药玩法失败');process.exitCode=pass?0:1;

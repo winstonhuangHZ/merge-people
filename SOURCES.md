@@ -15,7 +15,7 @@
 - 习近平：[Xi Jinping 2022 (cropped).jpg](https://commons.wikimedia.org/wiki/File:Xi_Jinping_2022_(cropped).jpg)；维基共享资源标示：Public domain；作者：𝗗𝗲𝗽𝗮𝗿𝘁𝗺𝗲𝗻𝘁 𝗼𝗳 𝗙𝗼𝗿𝗲𝗶𝗴𝗻 𝗔𝗳𝗳𝗮𝗶𝗿𝘀。
 - 姆巴佩：[Picture with Mbappé (cropped).jpg](https://commons.wikimedia.org/wiki/File:Picture_with_Mbapp%C3%A9_(cropped).jpg)；维基共享资源标示：CC0；作者：Helfer Emilio。
 
-坦克素材依据 59 式坦克的外观生成，非历史现场照片。[美国国会及行政当局中国委员会听证记录](https://www.cecc.gov/sites/evo-subsites/cecc.house.gov/files/documents/hearings/2009/CECC%20Hearing%20-%20The%2020th%20Anniversary%20of%20the%20Tiananmen%20Square%20Protests%20-%206.4.09.pdf)将当时坦克描述为 Type 59。
+坦克素材参考 Max Smith 于 2007 年在北京中国人民革命军事博物馆拍摄并发布为公有领域的 [59 式坦克正侧面照](https://commons.wikimedia.org/wiki/File:Type_59_tank_-_front_right.jpg) 与 [俯视照](https://commons.wikimedia.org/wiki/File:Type_59_tank_-_above.jpg) 生成，并非历史现场照片。[美国国会及行政当局中国委员会听证记录](https://www.cecc.gov/sites/evo-subsites/cecc.house.gov/files/documents/hearings/2009/CECC%20Hearing%20-%20The%2020th%20Anniversary%20of%20the%20Tiananmen%20Square%20Protests%20-%206.4.09.pdf)将当时坦克描述为 Type 59。
 
 ## 游戏代码
 

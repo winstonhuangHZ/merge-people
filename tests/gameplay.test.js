@@ -194,6 +194,29 @@ ok(G.state.floats.some((f) => f.text.indexOf('两辆坦克') >= 0), '还有一�
 eq(G.state.revives, 1, '额外送了一枚复活币');
 eq(els.reviveBadge.hidden, false, '徽章就此出现');
 
+/* ---------- 坦克横扫和全场清除 ---------- */
+console.log('\n[F] 大坦克横扫整个棋盘');
+G.reset();
+const tank1=G.makeBall(210,450,10), tank2=G.makeBall(210,450,10);
+const left=G.makeBall(60,570,0), middle=G.makeBall(220,350,2), right=G.makeBall(370,500,4);
+const plantedBomb=G.makeBall(300,620,0); plantedBomb.isBomb=true; plantedBomb.tier=-1; plantedBomb.fuse=2;
+G.state.balls.push(tank1,tank2,left,middle,right,plantedBomb);
+G.stepPhysics(1/180);
+ok(!!G.state.sweep,'两辆坦克碰撞后开始横扫动画');
+eq(G.state.score, 500, '清场保留原有 500 分奖励');
+eq(G.state.revives, 1, '清场保留原有复活币奖励');
+const pendingBefore=G.state.pending, countBefore=G.state.balls.length;
+G.tryDrop();
+ok(G.state.balls.length===countBefore && G.state.pending===pendingBefore, '动画期间不能投放');
+G.update(.14); G.update(.6);
+ok(left.sweepHit && !right.sweepHit, '坦克从左向右依次撞飞物体');
+ok(left.x>60 && left.sweepLife>0, '被撞人物向右飞出');
+for(let i=0;i<180;i++) G.update(1/60);
+ok(!G.state.sweep && G.state.balls.length===0,'动画结束后人物和已投炸药全部清场');
+ok(!G.state.over && G.state.ready,'清场后游戏继续');
+G.tryDrop();
+ok(G.state.balls.length===1,'清场后可以再次投放');
+
 /* ---------- F. 定格会自己结束，不会卡死 ---------- */
 console.log('\n[F] 定格会自己结束');
 G.reset();
