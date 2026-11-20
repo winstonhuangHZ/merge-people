@@ -2,130 +2,136 @@
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#fff3e0">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#eee4d0">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="合成人物">
 <meta name="description" content="合成人物 · 纯前端小游戏：拖动瞄准、松手投放，相同的撞在一起合成更高一级。">
-<!-- ↓ Monetag 站点验证：把后台给的 meta 标签粘在下面这一行 ↓ -->
-
 <title>合成人物</title>
-<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="style.css?v=20261120-art">
 </head>
 <body>
 
+<header class="masthead">
+  <span class="masthead-mark"><span aria-hidden="true">合</span> 游戏画报</span>
+  <a href="https://github.com/winstonhuangHZ/merge-people/blob/main/SOURCES.md">素材与致谢</a>
+</header>
+
 <main class="app">
-
-  <!-- ===== 游戏区 ===== -->
-  <section class="stage" id="stage">
-    <canvas id="game" aria-label="合成人物游戏区域"></canvas>
-
-    <!-- 复活币：浮在棋盘左上角。
-         刻意不放进顶部信息条 —— 手机上面板是横向 flex，
-         多一个卡片会把「分数 / 最高分」挤到 52px 宽还折行（实测面板从 66px 涨到 102px）。
-         这里 pointer-events 关掉，永远不会挡住投放。 -->
-    <div class="revive-chip" id="reviveBadge" hidden>
-      <span class="revive-chip-ico" aria-hidden="true">🪙</span><span id="reviveCount">×0</span>
+  <header class="intro">
+    <div class="title-block">
+      <h1><span>合成</span><span>人物</span></h1>
+      <p class="subtitle">把相同的人物凑在一起，合成下一级。</p>
     </div>
-
-    <div class="overlay" id="overlay">
-      <div class="dialog">
-
-        <!-- ===== 越线第一屏：有复活币时才出现 ===== -->
-        <div class="revive-ask" id="revivePrompt" hidden>
-          <div class="dialog-emoji">😵</div>
-          <h2>还能再救一下</h2>
-          <p class="dialog-score">本局得分 <strong id="reviveScore">0</strong></p>
-          <p class="revive-hint">清掉警戒线以上的人物，接着玩</p>
-          <div class="dialog-actions">
-            <button class="btn" id="giveUpBtn" type="button">不了，结束吧</button>
-            <button class="btn btn-revive" id="reviveBtn" type="button">🪙 用一枚复活币</button>
-          </div>
-          <p class="dialog-hint" id="reviveLeft">还剩 1 枚</p>
-        </div>
-
-        <!-- ===== 第二屏：正式结算 ===== -->
-        <div id="overPanel">
-          <div class="dialog-emoji">🍉</div>
-          <h2 id="overTitle">游戏结束</h2>
-          <p class="dialog-score">本局得分 <strong id="finalScore">0</strong></p>
-          <p class="dialog-best">最高分 <span id="finalBest">0</span></p>
-
-          <div class="submit-box" id="submitBox" hidden>
-            <label class="over-name-label" for="overNameInput">排行榜用户名</label>
-            <input class="name-input" id="overNameInput" type="text" maxlength="12"
-                   placeholder="输入用户名后提交" autocomplete="nickname" enterkeyhint="done">
-            <button class="btn btn-primary" id="submitBtn" type="button">提交成绩</button>
-            <p class="submit-msg" id="submitMsg">填写用户名后，点击提交才会写入历史排行榜</p>
-          </div>
-
-          <div class="dialog-actions">
-            <button class="btn btn-primary" id="restartBtn" type="button">再来一局</button>
-            <button class="btn" id="boardBtn2" type="button">🏆 历史排行</button>
-          </div>
-          <p class="dialog-hint">按 R 键也可重新开始</p>
-        </div>
-
-      </div>
-    </div>
-  </section>
-
-  <!-- ===== 侧边面板 ===== -->
-  <aside class="panel">
-
-    <header class="panel-head">
-      <h1>合成人物</h1>
-      <p class="subtitle">相同的撞在一起，越合越大</p>
-    </header>
 
     <div class="stats">
       <div class="stat">
-        <span class="stat-label">分数</span>
+        <span class="stat-label">本局得分</span>
         <strong class="stat-value" id="score">0</strong>
       </div>
-      <div class="stat">
+      <div class="stat stat-best">
         <span class="stat-label">最高分</span>
-        <strong class="stat-value stat-best" id="best">0</strong>
+        <strong class="stat-value" id="best">0</strong>
       </div>
     </div>
 
     <div class="next-box">
-      <span class="box-label">下一个</span>
-      <canvas id="next" width="160" height="160" aria-label="下一个"></canvas>
+      <span class="box-label">下一位</span>
+      <canvas id="next" width="160" height="160" aria-label="下一位人物"></canvas>
     </div>
+  </header>
 
-    <div class="chain-box">
-      <span class="box-label">合成表</span>
-      <canvas id="chain" width="680" height="112" aria-label="合成顺序"></canvas>
-      <p class="chain-note">✨ 两辆坦克相撞，召唤大坦克横扫清场，换 <strong>500 分</strong> + <strong>一枚复活币</strong></p>
+  <section class="game-column" aria-label="游戏棋盘">
+    <div class="game-heading">
+      <span>合成棋盘</span>
+      <span class="danger-key">警戒线</span>
     </div>
+    <div class="game-frame">
+      <div class="stage" id="stage">
+        <canvas id="game" aria-label="合成人物游戏区域"></canvas>
+
+        <div class="revive-chip" id="reviveBadge" hidden>
+          <span class="revive-chip-ico" aria-hidden="true">🪙</span><span id="reviveCount">×0</span>
+        </div>
+
+        <div class="overlay" id="overlay">
+          <div class="dialog">
+
+            <!-- ===== 越线第一屏：有复活币时才出现 ===== -->
+            <div class="revive-ask" id="revivePrompt" hidden>
+              <h2>使用复活币？</h2>
+              <p class="dialog-score">本局得分 <strong id="reviveScore">0</strong></p>
+              <p class="revive-hint">清掉警戒线以上的人物，接着玩</p>
+              <div class="dialog-actions">
+                <button class="btn" id="giveUpBtn" type="button">结束本局</button>
+                <button class="btn btn-revive" id="reviveBtn" type="button">用一枚复活币</button>
+              </div>
+              <p class="dialog-hint" id="reviveLeft">还剩 1 枚</p>
+            </div>
+
+            <!-- ===== 第二屏：正式结算 ===== -->
+            <div id="overPanel">
+              <h2 id="overTitle">游戏结束</h2>
+              <p class="dialog-score">本局得分 <strong id="finalScore">0</strong></p>
+              <p class="dialog-best">最高分 <span id="finalBest">0</span></p>
+
+              <div class="submit-box" id="submitBox" hidden>
+                <label class="over-name-label" for="overNameInput">排行榜用户名</label>
+                <input class="name-input" id="overNameInput" type="text" maxlength="12"
+                       placeholder="输入用户名后提交" autocomplete="nickname" enterkeyhint="done">
+                <button class="btn btn-primary" id="submitBtn" type="button">提交成绩</button>
+                <p class="submit-msg" id="submitMsg">填写用户名后，点击提交才会写入历史排行榜</p>
+              </div>
+
+              <div class="dialog-actions">
+                <button class="btn btn-primary" id="restartBtn" type="button">再来一局</button>
+                <button class="btn" id="boardBtn2" type="button">历史排行</button>
+              </div>
+              <p class="dialog-hint">按 R 键也可重新开始</p>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+    <p class="drop-hint"><span class="pointer-hint">移动瞄准，点击投放</span><span class="touch-hint">拖动瞄准，松手投放</span></p>
+  </section>
+
+  <aside class="playbook" aria-label="操作与玩法">
+    <figure class="scene">
+      <img src="assets/scenes/tiananmen.webp" alt="浅褐色天空下的红墙与金瓦城楼，前方是空旷的石板广场" width="1200" height="800">
+      <figcaption><strong>天安门城楼</strong><span>AI 生成插图</span></figcaption>
+    </figure>
 
     <div class="actions">
-      <button class="btn btn-bomb" id="bombBtn" type="button" aria-pressed="false" title="选择炸药，点击棋盘投放（B）"><span class="ico">💣</span><span class="lbl">炸药 </span><strong id="bombCount">×3</strong></button>
-      <button class="btn" id="boardBtn" type="button" aria-label="查看完整历史排行榜"><span class="ico">🏆</span><span class="lbl">历史排行</span></button>
-      <button class="btn" id="guideBtn" type="button" aria-label="查看等级图鉴"><span class="ico">📖</span><span class="lbl">等级图鉴</span></button>
-      <button class="btn" id="soundBtn" type="button" aria-pressed="true">
-        <span class="ico">🔊</span><span class="lbl">音效开</span>
-      </button>
-      <button class="btn btn-primary" id="resetBtn" type="button" title="重新开始">
-        <span class="ico">↻</span><span class="lbl">重开</span>
-      </button>
+      <button class="btn btn-bomb" id="bombBtn" type="button" aria-pressed="false" title="选择炸药，点击棋盘投放（B）">炸药 <strong id="bombCount">×3</strong></button>
+      <button class="btn btn-primary" id="resetBtn" type="button" title="重新开始（R）">重开</button>
+      <button class="btn" id="guideBtn" type="button">等级图鉴</button>
+      <button class="btn" id="boardBtn" type="button">历史排行</button>
+      <button class="btn" id="soundBtn" type="button" aria-pressed="true"><span class="lbl">音效开</span></button>
     </div>
 
-    <p class="tips">
-      鼠标：移动瞄准、点击投放；触屏：拖动瞄准、松手投放。<br>
-      ← → 微调位置，空格投放，B 选择炸药，R 重开。<br>
-      每局有 3 枚炸药，合成习近平 +1；投放约 2 秒后推开全场。<br>每 <strong>2000 分</strong>攒一枚<strong>复活币</strong>，只在本局有效。<br><a href="https://github.com/winstonhuangHZ/merge-people/blob/main/SOURCES.md">图片来源与说明</a>
-    </p>
-
+    <section class="reference" aria-labelledby="chainTitle">
+      <h2 id="chainTitle">合成顺序</h2>
+      <canvas id="chain" width="680" height="95" aria-label="从毛泽东到坦克的合成顺序，详情见等级图鉴"></canvas>
+      <p>两辆坦克相撞，清空棋盘并奖励 <strong>500 分</strong>和<strong>一枚复活币</strong>。</p>
+      <details class="rules">
+        <summary>玩法与快捷键</summary>
+        <ul>
+          <li>人物停在警戒线上方太久，本局结束。</li>
+          <li>每局有 3 枚炸药。合成习近平再得 1 枚。投放约 2 秒后推开全场。</li>
+          <li>每 2000 分攒一枚复活币，只在本局有效。</li>
+        </ul>
+        <p><kbd>←</kbd> <kbd>→</kbd> 瞄准　<kbd>空格</kbd> 投放<br><kbd>B</kbd> 选择炸药　<kbd>R</kbd> 重开</p>
+      </details>
+    </section>
   </aside>
-
 </main>
 
 <dialog class="level-dialog" id="levelDialog" aria-labelledby="levelTitle">
-  <header class="level-head"><div><span class="level-kicker">MERGE GUIDE</span><h2 id="levelTitle">等级图鉴</h2></div><form method="dialog"><button class="level-close" aria-label="关闭图鉴">✕</button></form></header>
+  <header class="level-head"><h2 id="levelTitle">等级图鉴</h2><form method="dialog"><button class="level-close" aria-label="关闭图鉴">✕</button></form></header>
   <p class="level-intro">相同的两个合成下一级，从头像到全身，最后解锁坦克。</p>
   <ol class="level-grid">
       <li><span class="level-badge">LV 1</span><img src="assets/fruits/01-grape.webp" alt="" width="96" height="96"><strong>毛泽东</strong></li>
@@ -174,7 +180,7 @@
 <!-- 极模糊占位图（内联 data URL，由 tools/make_blur.py 产出）：贴图没到位时先画它 -->
 <script src="assets/fruits/blur.js"></script>
 <script src="leaderboard.js?v=20261120-3"></script>
-<script src="game.js"></script>
+<script src="game.js?v=20261120-art"></script>
 
 </body>
 </html>

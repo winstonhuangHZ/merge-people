@@ -1021,24 +1021,10 @@
   }
 
   function drawBoard() {
-    /* 背景 */
-    const bg = ctx.createLinearGradient(0, 0, 0, H);
-    bg.addColorStop(0, '#fffaf0');
-    bg.addColorStop(0.55, '#fff2dc');
-    bg.addColorStop(1, '#ffe7c6');
-    ctx.fillStyle = bg;
-    ctx.fillRect(0, 0, W, H);
-
-    /* 顶部投放区高光 */
-    const top = ctx.createLinearGradient(0, 0, 0, 190);
-    top.addColorStop(0, 'rgba(255,255,255,.85)');
-    top.addColorStop(1, 'rgba(255,255,255,0)');
-    ctx.fillStyle = top;
-    ctx.fillRect(0, 0, W, 190);
-
+    /* 城楼背景由 CSS 绘制，画布只画棋盘边界和警戒线。 */
     /* 内壁阴影 */
     ctx.save();
-    ctx.strokeStyle = 'rgba(196,150,100,.35)';
+    ctx.strokeStyle = 'rgba(102,74,52,.45)';
     ctx.lineWidth = 2;
     ctx.beginPath();
     ctx.moveTo(WALL, 0);
@@ -1052,10 +1038,10 @@
     const danger = state.danger;
     ctx.save();
     ctx.setLineDash([9, 9]);
-    ctx.lineWidth = 2;
+    ctx.lineWidth = danger ? 4 : 2;
     ctx.strokeStyle = danger
-      ? 'rgba(255,72,72,' + (0.55 + 0.45 * Math.abs(Math.sin(performance.now() / 140))) + ')'
-      : 'rgba(226,152,120,.42)';
+      ? '#a32e23'
+      : 'rgba(143,47,37,.58)';
     ctx.beginPath();
     ctx.moveTo(WALL, DANGER_Y);
     ctx.lineTo(W - WALL, DANGER_Y);
@@ -1179,7 +1165,7 @@
       ctx.save();
       ctx.setLineDash([5, 8]);
       ctx.lineWidth = 1.6;
-      ctx.strokeStyle = 'rgba(200,140,90,.45)';
+      ctx.strokeStyle = 'rgba(102,74,52,.50)';
       ctx.beginPath();
       ctx.moveTo(x, DROP_Y + r + 4);
       ctx.lineTo(x, H - WALL);
@@ -1195,8 +1181,7 @@
       ctx.restore();
     }
 
-    /* 冷却中也要画：淡一点表示“下一颗就是它、但还不能投”。
-       不然这段时间棋盘上只剩右上角的“下一个”，很容易被当成当前这颗 */
+    /* 冷却中降低当前人物的不透明度，提示暂不可投放。 */
     ctx.save();
     if (!ready) ctx.globalAlpha = 0.4;
     if (state.bombMode) drawBomb(ctx, x, DROP_Y + bob, r, 2.2);
@@ -1258,7 +1243,7 @@
     ctx.font = '600 11px "PingFang SC", "Microsoft YaHei", system-ui, sans-serif';
     ctx.textAlign = 'right';
     ctx.textBaseline = 'middle';
-    ctx.fillStyle = 'rgba(150,110,80,.85)';
+    ctx.fillStyle = '#665448';
     ctx.fillText('下一个', x - r - 10, y);
     ctx.restore();
 
@@ -1452,6 +1437,8 @@
       e.preventDefault();
     } else if (e.code === 'Space' || e.code === 'Enter' || e.code === 'ArrowDown') {
       /* 空格/回车只在局内投放；结束后不再用它们重开（免得手快连着开新局） */
+      const tag = e.target && e.target.tagName;
+      if (e.code !== 'ArrowDown' && (tag === 'BUTTON' || tag === 'SUMMARY' || tag === 'A')) return;
       if (!state.over) { tryDrop(); e.preventDefault(); }
     } else if (e.code === 'KeyB') {
       toggleBomb(); e.preventDefault();
@@ -1461,11 +1448,8 @@
     }
   });
 
-  /* 音效按钮里是 <span class="ico"> + <span class="lbl">，只改这两块文字 */
   function paintSoundBtn() {
-    const ico = soundBtn.querySelector('.ico');
     const lbl = soundBtn.querySelector('.lbl');
-    if (ico) ico.textContent = Sound.muted ? '🔇' : '🔊';
     if (lbl) lbl.textContent = Sound.muted ? '音效关' : '音效开';
     soundBtn.setAttribute('aria-pressed', String(!Sound.muted));
   }

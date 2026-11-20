@@ -17,6 +17,10 @@
 
 坦克素材参考 Max Smith 于 2007 年在北京中国人民革命军事博物馆拍摄并发布为公有领域的 [59 式坦克正侧面照](https://commons.wikimedia.org/wiki/File:Type_59_tank_-_front_right.jpg) 与 [俯视照](https://commons.wikimedia.org/wiki/File:Type_59_tank_-_above.jpg) 生成，并非历史现场照片。[美国国会及行政当局中国委员会听证记录](https://www.cecc.gov/sites/evo-subsites/cecc.house.gov/files/documents/hearings/2009/CECC%20Hearing%20-%20The%2020th%20Anniversary%20of%20the%20Tiananmen%20Square%20Protests%20-%206.4.09.pdf)将当时坦克描述为 Type 59。
 
+## 城楼插图
+
+[天安门城楼](assets/scenes/tiananmen.webp)由 OpenAI 内置 ImageGen 生成，采用上世纪中叶北京建筑摄影与手工着色凹版印刷风格。插图用于版面和棋盘背景，场景由模型绘制。
+
 ## 游戏代码
 
 基于 [YHSome/BigNaiWa v1](https://github.com/YHSome/BigNaiWa/tree/main/v1) 修改。
