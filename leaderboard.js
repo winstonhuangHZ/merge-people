@@ -370,7 +370,7 @@
     rendered = 0;
 
     if (!rows.length) {
-      boardMessage('还没有历史成绩，玩一局后会自动上榜。');
+      boardMessage('还没有历史成绩。玩一局并填写用户名、点击提交后才会上榜。');
       if (els.more) els.more.hidden = true;
       if (els.count) els.count.textContent = '暂无记录';
       return;
