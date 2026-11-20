@@ -17,7 +17,7 @@
   var TABLE_URL = SUPABASE_URL + '/rest/v1/leaderboard_scores';
   var PLAYER_KEY = 'merge-people.player.v1';
   var NAME_KEY = 'merge-people.name.v1';
-  var DEFAULT_NAME = '默认用户';
+  var FALLBACK_NAME = '匿名玩家';
   var PAGE_SIZE = 500;       // 小于 Supabase/PostgREST 常用的 1000 行单次上限
   var MAX_PAGES = 200;       // 安全上限：100,000 条历史记录
   var RENDER_STEP = 50;
@@ -33,6 +33,8 @@
   var lastSubmitAt = 0;
   var submitting = false;
   var pendingScore = 0;
+  var submitAttempted = false;
+  var submitted = false;
   var lastFocus = null;
 
   var ABUSE_WORDS = [
@@ -80,7 +82,7 @@
   }
 
   function myName() {
-    return loadName() || DEFAULT_NAME;
+    return loadName();
   }
 
   function playerId() {
@@ -108,28 +110,43 @@
     els.msg.className = 'submit-msg' + (kind ? ' is-' + kind : '');
   }
 
-  function showRetry(show) {
-    if (els.submitBtn) els.submitBtn.hidden = !show;
+  function updateSubmitButton() {
+    if (!els.submitBtn) return;
+    var name = loadName();
+    els.submitBtn.disabled = submitting || submitted || pendingScore <= 0 ||
+      !name || hasBannedWord(name);
+    els.submitBtn.textContent = submitted ? '已提交' :
+      (submitAttempted ? '重试提交' : '提交成绩');
   }
 
   function paintName() {
-    var name = myName();
-    if (els.nameLabel) els.nameLabel.textContent = name;
+    var name = loadName();
     if (els.nickInput && document.activeElement !== els.nickInput) {
-      els.nickInput.value = loadName();
+      els.nickInput.value = name;
     }
+    if (els.overNameInput && document.activeElement !== els.overNameInput) {
+      els.overNameInput.value = name;
+    }
+    updateSubmitButton();
   }
 
   function commitName(raw) {
     var name = cleanName(raw);
     saveName(name);
-    paintName();
-    if (els.nickInput) els.nickInput.value = name;
+    if (els.nickInput && document.activeElement !== els.nickInput) {
+      els.nickInput.value = name;
+    }
+    if (els.overNameInput && document.activeElement !== els.overNameInput) {
+      els.overNameInput.value = name;
+    }
+    updateSubmitButton();
 
-    if (hasBannedWord(name)) {
+    if (!name) {
+      if (pendingScore > 0 && !submitted) setMsg('请先输入用户名，再点击提交成绩。', 'bad');
+    } else if (hasBannedWord(name)) {
       setMsg('昵称含不适合公开展示的词，本局不会自动上榜。修改昵称后可以重试。', 'bad');
-    } else if (els.msg && els.msg.textContent.indexOf('不会自动上榜') >= 0) {
-      setMsg('', '');
+    } else if (pendingScore > 0 && !submitted && !submitting) {
+      setMsg('用户名已填写，点击“提交成绩”才会写入排行榜。', '');
     }
     return name;
   }
@@ -305,7 +322,7 @@
 
     var name = document.createElement('strong');
     name.className = 'board-name';
-    name.textContent = hasBannedWord(row.name) ? DEFAULT_NAME : row.name;
+    name.textContent = hasBannedWord(row.name) ? FALLBACK_NAME : row.name;
 
     var time = document.createElement('small');
     time.className = 'board-time';
@@ -398,15 +415,24 @@
   }
 
   function submitScore(name, score, retryMode) {
+    name = cleanName(name);
     score = Number(score) || 0;
     if (submitting) return Promise.resolve(false);
     if (!(score > 0) || score > MAX_SCORE) {
       setMsg('分数为 0 或格式异常，不上榜。', 'bad');
       return Promise.resolve(false);
     }
+    if (!name) {
+      submitAttempted = true;
+      setMsg('请先输入用户名，再点击提交成绩。', 'bad');
+      updateSubmitButton();
+      if (els.overNameInput) els.overNameInput.focus();
+      return Promise.resolve(false);
+    }
     if (hasBannedWord(name)) {
+      submitAttempted = true;
       setMsg('昵称含不适合公开展示的词，本局不会自动上榜。修改昵称后可以重试。', 'bad');
-      showRetry(true);
+      updateSubmitButton();
       return Promise.resolve(false);
     }
 
@@ -417,42 +443,52 @@
     }
 
     submitting = true;
-    showRetry(false);
+    submitAttempted = true;
     setMsg('正在提交历史成绩…', '');
+    updateSubmitButton();
 
-    return addScore(name, score).then(function (submitted) {
-      lastSubmittedId = submitted.id;
+    return addScore(name, score).then(function (created) {
+      lastSubmittedId = created.id;
       lastSubmittedScore = score;
       lastSubmitAt = Date.now();
+      submitted = true;
+      pendingScore = 0;
       setMsg('已写入历史排行榜 · ' + name + ' · ' + score + ' 分', 'good');
       if (isOpen()) return refreshBoard(score).then(function () { return true; }, function () { return true; });
       return true;
     }).catch(function (err) {
       setMsg('提交失败：' + err.message, 'bad');
-      showRetry(true);
       return false;
     }).then(function (ok) {
       submitting = false;
+      updateSubmitButton();
       return ok;
     });
   }
 
   function retry() {
-    if (pendingScore > 0) submitScore(myName(), pendingScore, true);
+    if (submitted || pendingScore <= 0) return;
+    var name = commitName(els.overNameInput ? els.overNameInput.value : loadName());
+    submitScore(name, pendingScore, true);
   }
 
   function onGameOver(score) {
     pendingScore = Number(score) || 0;
-    paintName();
-    showRetry(false);
+    submitAttempted = false;
+    submitted = false;
 
     if (!(pendingScore > 0)) {
       if (els.submitBox) els.submitBox.hidden = true;
       return;
     }
     if (els.submitBox) els.submitBox.hidden = false;
-    setMsg('正在结算…', '');
-    submitScore(myName(), pendingScore, false);
+    paintName();
+    if (!loadName()) {
+      setMsg('请先输入用户名，再点击提交成绩。本局不会自动写入。', 'bad');
+    } else {
+      setMsg('确认用户名后，点击“提交成绩”才会写入排行榜。', '');
+    }
+    updateSubmitButton();
   }
 
   function bind() {
@@ -466,7 +502,7 @@
     els.submitBox = $('submitBox');
     els.submitBtn = $('submitBtn');
     els.nickInput = $('nickInput');
-    els.nameLabel = $('myNameLabel');
+    els.overNameInput = $('overNameInput');
 
     ['boardBtn', 'boardBtn2'].forEach(function (id) {
       var button = $(id);
@@ -487,6 +523,7 @@
     if (els.nickInput) {
       els.nickInput.value = loadName();
       var commit = function () { commitName(els.nickInput.value); };
+      els.nickInput.addEventListener('input', commit);
       els.nickInput.addEventListener('change', commit);
       els.nickInput.addEventListener('blur', commit);
       els.nickInput.addEventListener('keydown', function (e) {
@@ -494,6 +531,19 @@
           e.preventDefault();
           commit();
           els.nickInput.blur();
+        }
+      });
+    }
+
+    if (els.overNameInput) {
+      els.overNameInput.value = loadName();
+      els.overNameInput.addEventListener('input', function () {
+        commitName(els.overNameInput.value);
+      });
+      els.overNameInput.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' && !els.submitBtn.disabled) {
+          e.preventDefault();
+          retry();
         }
       });
     }

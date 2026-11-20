@@ -64,7 +64,7 @@ const els = {};
 [
   'boardBtn', 'boardBtn2', 'boardModal', 'boardClose', 'boardRefresh',
   'boardList', 'boardMore', 'boardCount', 'nickInput', 'submitBox',
-  'submitMsg', 'myNameLabel', 'submitBtn', 'editNameBtn'
+  'submitMsg', 'overNameInput', 'submitBtn'
 ].forEach(function (id) { els[id] = makeEl(id); });
 
 const document = {
@@ -212,23 +212,25 @@ function ok(condition, label, extra) {
   Board.close();
   ok(Board.isOpen() === false, 'close() 关闭排行榜');
 
-  console.log('\n[4] 昵称过滤与重试');
-  Board.setName('傻逼玩家');
+  console.log('\n[4] 必须填写用户名并手动提交');
+  Board.setName('');
   calls.length = 0;
   Board.onGameOver(4321);
   await new Promise(function (resolve) { setTimeout(resolve, 30); });
+  ok(els.overNameInput.value === '', '空用户名不会被自动补成默认用户');
+  ok(els.submitBtn.disabled === true, '空用户名时提交按钮不可用');
   ok(calls.filter(function (call) { return call.method === 'POST'; }).length === 0,
-    '屏蔽昵称没有写入 Supabase');
-  ok(els.submitBtn.hidden === false, '显示重试提交按钮');
+    '结算时不会自动写入 Supabase');
 
   Board.setName('正常玩家');
+  ok(els.submitBtn.disabled === false, '填写用户名后提交按钮可用');
   calls.length = 0;
   if (els.submitBtn._handlers && els.submitBtn._handlers.click) {
     els.submitBtn._handlers.click();
   }
   await new Promise(function (resolve) { setTimeout(resolve, 30); });
   const posts = calls.filter(function (call) { return call.method === 'POST'; });
-  ok(posts.length === 1, '改好昵称后补提交一次');
+  ok(posts.length === 1, '只有点击提交后才写入一次');
   if (posts.length) {
     const body = JSON.parse(posts[0].options.body)[0];
     ok(body.nickname === '正常玩家' && Number(body.score) === 4321,
@@ -240,6 +242,8 @@ function ok(condition, label, extra) {
   ok(calls.every(function (call) {
     return call.method === 'GET' || call.method === 'POST';
   }), '没有 UPDATE、PATCH 或 DELETE 请求');
+  ok(els.submitBtn.disabled === true && els.submitBtn.textContent === '已提交',
+    '提交成功后按钮锁定，防止重复写入');
 
   console.log('\n' + pass + ' 通过 / ' + fail + ' 失败');
   process.exit(fail ? 1 : 0);

@@ -485,8 +485,20 @@ body {
 
 .submit-box .btn { width: 100%; }
 
+.over-name-label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+
+.submit-box .name-input {
+  margin-bottom: 10px;
+}
+
 .submit-msg {
   margin: 0;
+  margin-top: 8px;
   min-height: 17px;
   font-size: 12.5px;
   line-height: 1.35;
