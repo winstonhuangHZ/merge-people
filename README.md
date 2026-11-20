@@ -2,6 +2,10 @@
 
 [在线游玩](https://winstonhuanghz.github.io/merge-people/) · 也可以直接用浏览器打开 `index.html`。鼠标移动后点击投放；触屏拖动后松手投放。键盘左右键调整位置，空格投放，R 重开。点击「等级图鉴」查看所有等级，打开图鉴期间游戏暂停。最高分保存在当前浏览器。
 
+每局结束后，正分会自动写入完整历史排行榜。排行榜会分页读取全部历史记录，按分数从高到低展示，并且每次先渲染 50 条、可以继续展开。打开排行榜时游戏暂停。昵称保存在当前浏览器，默认是「默认用户」；昵称和成绩会公开展示，请勿填写个人信息。
+
+排行榜使用 Supabase 的公开客户端 key 和行级安全策略：匿名客户端只能读取、新增成绩，不能修改或删除已有记录；时间戳由数据库生成。表结构与权限见 `supabase/schema.sql`。昵称含明显辱骂或导流词时不会提交；但客户端无法从根本上阻止伪造请求，因此它适合娱乐排名，不适合作为有奖竞技或可信成绩认证。
+
 每局有 3 枚炸药。点击「炸药」或按 B 选择，再点击或触屏投放；再点一次按钮可取消选择。炸药约 2 秒后爆炸，以强力冲击推开全场，而不直接删除人物。合成一个习近平（LV 9）奖励 1 枚炸药。引信燃烧期间不能再次投放炸药，但可以继续投放普通人物。
 
 合成顺序：毛泽东 → 周恩来 → 刘少奇 → 华国锋 → 邓小平 → 江泽民 → 朱镕基 → 胡锦涛 → 习近平 → 姆巴佩毛装彩蛋 → 59 式坦克。两辆坦克碰撞后召唤一辆大坦克横扫并清空棋盘，同时奖励分数和复活币。人物顺序是游戏设定，并非历史地位排序。
@@ -12,4 +16,4 @@
 
 ## 验证
 
-安装 Node.js 后，可运行 `node tests/bomb.test.js`、`node tests/stability.test.js`、`node tests/gameplay.test.js` 和 `node tests/physics.test.js`。
+安装 Node.js 后，可运行 `node tests/bomb.test.js`、`node tests/stability.test.js`、`node tests/gameplay.test.js`、`node tests/physics.test.js` 和 `node tests/leaderboard.test.js`。

@@ -585,8 +585,8 @@ body {
 .modal-card {
   display: flex;
   flex-direction: column;
-  width: min(380px, 100%);
-  max-height: min(560px, calc(var(--vh) - 40px));
+  width: min(430px, 100%);
+  max-height: min(680px, calc(var(--vh) - 40px));
   padding: 16px;
   border-radius: 22px;
   background: rgba(255, 252, 246, .98);
@@ -599,7 +599,7 @@ body {
 
 .modal-head {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   margin-bottom: 10px;
 }
@@ -660,12 +660,24 @@ body {
 }
 
 .board-name {
-  flex: 1 1 auto;
+  display: block;
   min-width: 0;
   font-size: 14px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.board-info {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.board-time {
+  display: block;
+  margin-top: 2px;
+  font-size: 10.5px;
+  color: var(--ink-soft);
 }
 
 .board-score {
@@ -699,6 +711,15 @@ body {
 .board-note {
   font-size: 11px;
   color: var(--ink-soft);
+}
+
+.modal-head .board-note {
+  margin: 4px 0 0;
+}
+
+.board-more {
+  width: 100%;
+  margin-top: 8px;
 }
 
 .modal-foot .btn { flex: 0 0 auto; padding: 8px 16px; }
@@ -809,17 +830,19 @@ body {
     white-space: nowrap;
   }
 
-  /* 手机上「排行榜 / 音效」只留图标，把横向空间让给分数 */
+  /* 手机上「排行榜 / 图鉴 / 音效 / 重开」只留图标，把横向空间让给分数 */
   #boardBtn .lbl,
-  #soundBtn .lbl { display: none; }
+  #guideBtn .lbl,
+  #soundBtn .lbl,
+  #resetBtn .lbl { display: none; }
 
-  #boardBtn, #soundBtn {
+  #boardBtn, #guideBtn, #soundBtn, #resetBtn {
     min-width: 46px;
     padding: 0 10px;
     font-size: 17px;
   }
 
-  #boardBtn .ico, #soundBtn .ico { margin-right: 0; }
+  #boardBtn .ico, #guideBtn .ico, #soundBtn .ico, #resetBtn .ico { margin-right: 0; }
 
   /* ---- 结束弹窗 ---- */
   .overlay { padding: 14px; }
@@ -895,14 +918,14 @@ body {
 
   .btn { min-height: 44px; padding: 0 10px; font-size: 13px; }
 
-  #boardBtn, #soundBtn { min-width: 42px; font-size: 16px; }
+  #boardBtn, #guideBtn, #soundBtn, #resetBtn { min-width: 42px; font-size: 16px; }
 }
 
 /* 顶部信息条在横屏下是竖排的，恢复成图标 + 文字 */
 @media (max-width: 860px) and (orientation: landscape) {
-  #boardBtn, #soundBtn { min-width: 0; padding: 0 10px; font-size: 13px; }
-  #boardBtn .lbl, #soundBtn .lbl { display: inline; }
-  #boardBtn .ico, #soundBtn .ico { margin-right: 4px; }
+  #boardBtn, #guideBtn, #soundBtn, #resetBtn { min-width: 0; padding: 0 10px; font-size: 13px; }
+  #boardBtn .lbl, #guideBtn .lbl, #soundBtn .lbl, #resetBtn .lbl { display: inline; }
+  #boardBtn .ico, #guideBtn .ico, #soundBtn .ico, #resetBtn .ico { margin-right: 4px; }
 }
 
 /* 很矮的横屏（手机横过来且高度不足 430px）：进一步压缩 */

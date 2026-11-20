@@ -1335,6 +1335,8 @@
     if (state.freeze > 0) { state.freeze = Math.max(0, state.freeze - dt); return; }
 
     if (levelDialog && levelDialog.open) return; // 图鉴打开时暂停
+    if (window.DanaiwaBoard && window.DanaiwaBoard.isOpen &&
+        window.DanaiwaBoard.isOpen()) return;     // 排行榜打开时暂停
     if (state.over) return;          // 结束后冻结棋盘（粒子特效仍在 render 里继续）
     if (state.sweep) {
       updateSweep(dt);
@@ -1438,7 +1440,9 @@
   }
 
   window.addEventListener('keydown', (e) => {
-    if (isTyping(e) || (levelDialog && levelDialog.open)) return;
+    const boardOpen = window.DanaiwaBoard && window.DanaiwaBoard.isOpen &&
+      window.DanaiwaBoard.isOpen();
+    if (isTyping(e) || (levelDialog && levelDialog.open) || boardOpen) return;
 
     if (e.code === 'ArrowLeft' || e.code === 'KeyA') {
       state.aimX = clamp(state.aimX - 14, WALL, W);
